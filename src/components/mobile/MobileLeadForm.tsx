@@ -92,11 +92,8 @@ export default function MobileLeadForm({
   const [phoneNumber, setPhoneNumber] = useState("");
   const [interest, setInterest] = useState<Interest | "">("");
   const [preference, setPreference] = useState<Preference | "">(forcedPreference ?? "");
-  const [timeSlot, setTimeSlot] = useState("");
 
   const effectivePreference = forcedPreference ?? preference;
-  const requiresTimeSlot =
-    effectivePreference === "Appuntamento Showroom" || effectivePreference === "Consulenza interior designer";
 
   const canSubmit = useMemo(() => {
     return (
@@ -106,7 +103,6 @@ export default function MobileLeadForm({
       normalizePhoneDigits(phoneNumber).length >= 6 &&
       interest !== "" &&
       effectivePreference !== "" &&
-      (!requiresTimeSlot || timeSlot.trim().length > 0) &&
       !loading
     );
   }, [
@@ -117,8 +113,6 @@ export default function MobileLeadForm({
     lastName,
     loading,
     phoneNumber,
-    requiresTimeSlot,
-    timeSlot,
   ]);
 
   const submit = async () => {
@@ -151,7 +145,6 @@ export default function MobileLeadForm({
           phoneNumber: ensurePhoneInternational(phoneNumber),
           interest,
           preference: effectivePreference,
-          timeSlot: requiresTimeSlot ? timeSlot : "",
         }),
       });
       const completeJson = (await completeRes.json().catch(() => null)) as any;
@@ -165,7 +158,6 @@ export default function MobileLeadForm({
       setPhoneNumber("");
       setInterest("");
       setPreference("");
-      setTimeSlot("");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Invio fallito");
     } finally {
@@ -176,8 +168,8 @@ export default function MobileLeadForm({
   return (
     <div className="min-h-[100dvh] overflow-x-hidden p-6 pb-[calc(2.5rem+env(safe-area-inset-bottom))] [touch-action:pan-y]">
       <div className="mx-auto w-full max-w-xl rounded-3xl border border-white/10 bg-white/5 p-8">
-        <div className="mt-2 text-sm font-semibold text-white/60">{headerTitle}</div>
-        {headerSubtitle ? <div className="mt-2 text-lg text-white/80">{headerSubtitle}</div> : null}
+        <h1 className="mt-2 text-5xl leading-10 font-bold text-white leading-tight">{headerTitle}</h1>
+        {headerSubtitle ? <div className="mt-4 text-4xl text-white/80">{headerSubtitle}</div> : null}
 
         <div className="mt-8 space-y-6">
           <div>
@@ -268,25 +260,6 @@ export default function MobileLeadForm({
               )}
             </div>
           </div>
-
-          {requiresTimeSlot ? (
-            <div>
-              <div className="text-2xl font-semibold">Quando preferisce?</div>
-              <div className="mt-3">
-                <SelectField
-                  placeholder="Seleziona disponibilità"
-                  options={[
-                    "Settimana - mattina",
-                    "Settimana - pomeriggio",
-                    "Sabato mattina",
-                    "Sabato pomeriggio",
-                  ] as const}
-                  value={(timeSlot as any) || ""}
-                  onChange={(v) => setTimeSlot(v as string)}
-                />
-              </div>
-            </div>
-          ) : null}
 
           {error && <div className="rounded-2xl bg-red-500/20 p-4 text-base">{error}</div>}
 

@@ -30,13 +30,6 @@ const PREFERENCES: Preference[] = [
   "Consulenza interior designer",
 ];
 
-const TIME_SLOTS = [
-  "Settimana - mattina",
-  "Settimana - pomeriggio",
-  "Sabato mattina",
-  "Sabato pomeriggio",
-] as const;
-
 function isValidEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 }
@@ -96,7 +89,15 @@ function ChoiceList<T extends string>({
   );
 }
 
-export default function TvKioskLeadForm() {
+export type TvKioskLeadFormProps = {
+  forcedPreference?: Preference;
+  headerTitle?: string;
+};
+
+export default function TvKioskLeadForm({
+  forcedPreference,
+  headerTitle = "Prenota un appuntamento",
+}: TvKioskLeadFormProps = {}) {
   const [mode, setMode] = useState<"form" | "done">("form");
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -104,8 +105,7 @@ export default function TvKioskLeadForm() {
   const [leadId, setLeadId] = useState<string | null>(null);
 
   const [interests, setInterests] = useState<Interest[]>([]);
-  const [preference, setPreference] = useState<Preference>("Appuntamento Showroom");
-  const [timeSlot, setTimeSlot] = useState("");
+  const [preference, setPreference] = useState<Preference>(forcedPreference ?? "Appuntamento Showroom");
   const [focusedInterestIndex, setFocusedInterestIndex] = useState(0);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -119,7 +119,7 @@ export default function TvKioskLeadForm() {
   const emailDomainRef = useRef<HTMLInputElement | null>(null);
   const phoneRef = useRef<HTMLInputElement | null>(null);
 
-  const stepsTotal = 6;
+  const stepsTotal = 5;
   const progress = useMemo(() => Math.round(((step + 1) / stepsTotal) * 100), [step]);
 
   const readFirstName = () => firstNameRef.current?.value.trim() ?? firstName.trim();
@@ -233,17 +233,6 @@ export default function TvKioskLeadForm() {
         setError("Seleziona almeno un interesse");
         return;
       }
-      setPreference("Appuntamento Showroom");
-      if (!timeSlot) setTimeSlot(TIME_SLOTS[0]);
-      setStep(5);
-      return;
-    }
-
-    if (step === 5) {
-      if (!timeSlot.trim()) {
-        setError("Seleziona una disponibilità");
-        return;
-      }
       setLoading(true);
       try {
         const ensuredLeadId = await ensureLeadCreated();
@@ -261,8 +250,7 @@ export default function TvKioskLeadForm() {
             })(),
             phoneNumber: ensurePhoneInternational(phoneNumber),
             interests,
-            preference,
-            timeSlot,
+            preference: forcedPreference ?? "Appuntamento Showroom",
           }),
         });
         const json = (await res.json().catch(() => null)) as any;
@@ -276,8 +264,9 @@ export default function TvKioskLeadForm() {
       } finally {
         setLoading(false);
       }
+      return;
     }
-  }, [ensureLeadCreated, interests, loading, preference, step, timeSlot]);
+  }, [ensureLeadCreated, interests, loading, forcedPreference, step, emailLocal, emailDomain, firstName, lastName, phoneNumber]);
 
   const reset = () => {
     setMode("form");
@@ -286,8 +275,7 @@ export default function TvKioskLeadForm() {
     setError(null);
     setLeadId(null);
     setInterests([]);
-    setPreference("Appuntamento Showroom");
-    setTimeSlot("");
+    setPreference(forcedPreference ?? "Appuntamento Showroom");
       setFirstName("");
       setLastName("");
       setEmailLocal("");
@@ -322,19 +310,13 @@ export default function TvKioskLeadForm() {
         e.preventDefault();
         next();
       }
-      if ((step === 4 || step === 5) && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+      if (step === 4 && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
         e.preventDefault();
         const delta = e.key === "ArrowUp" ? -1 : 1;
-        if (step === 4) {
-          setFocusedInterestIndex((i: number) => {
-            const nextIndex = (i + delta + INTERESTS.length) % INTERESTS.length;
-            return nextIndex;
-          });
-        } else {
-          const currentIndex = Math.max(0, TIME_SLOTS.findIndex((x) => x === timeSlot));
-          const nextIndex = (currentIndex + delta + TIME_SLOTS.length) % TIME_SLOTS.length;
-          setTimeSlot(TIME_SLOTS[nextIndex]);
-        }
+        setFocusedInterestIndex((i: number) => {
+          const nextIndex = (i + delta + INTERESTS.length) % INTERESTS.length;
+          return nextIndex;
+        });
       }
 
       if (step === 4 && (e.key === "Enter" || e.key === " " || e.key === "Spacebar")) {
@@ -355,7 +337,7 @@ export default function TvKioskLeadForm() {
     };
     window.addEventListener("keydown", handler, true);
     return () => window.removeEventListener("keydown", handler, true);
-  }, [focusedInterestIndex, goBack, mode, next, step, timeSlot]);
+  }, [focusedInterestIndex, goBack, mode, next, step]);
 
   if (mode === "done") {
     return (
@@ -382,6 +364,9 @@ export default function TvKioskLeadForm() {
   return (
     <div className="flex h-full items-center justify-center p-6">
       <div className="relative w-full max-w-xl rounded-3xl border border-white/10 bg-white/5 p-8 md:p-12">
+        <h1 className="mb-8 text-center text-6xl font-bold text-white md:text-5xl lg:text-5xl leading-tight">
+          {headerTitle}
+        </h1>
         <div className="flex items-center justify-between gap-4">
           <div className="text-sm font-semibold text-white/60 md:text-lg">
             Step {step + 1} di {stepsTotal}
@@ -508,29 +493,6 @@ export default function TvKioskLeadForm() {
                 <div className="mt-6 text-lg font-semibold text-white/80 md:text-xl">
                   ↑ ↓ scegli · INVIO seleziona · → prosegui
                 </div>
-              </div>
-            </>
-          ) : null}
-
-          {step === 5 ? (
-            <>
-              <StepTitle>Quando preferisce?</StepTitle>
-              <div className="mt-8 grid grid-cols-1 gap-4">
-                {TIME_SLOTS.map((opt) => (
-                  <button
-                    key={opt}
-                    type="button"
-                    onClick={() => setTimeSlot(opt)}
-                    className={[
-                      "rounded-2xl border px-6 py-5 text-left text-xl font-semibold transition-colors md:text-2xl",
-                      timeSlot === opt
-                        ? "border-white bg-white text-[#003C5C]"
-                        : "border-white/10 bg-white/5 text-white hover:border-white/20",
-                    ].join(" ")}
-                  >
-                    {opt}
-                  </button>
-                ))}
               </div>
             </>
           ) : null}
