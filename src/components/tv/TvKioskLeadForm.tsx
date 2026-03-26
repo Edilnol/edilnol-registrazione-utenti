@@ -17,6 +17,13 @@ const INTERESTS: Interest[] = [
   "Porte e serramenti",
 ];
 
+const INTEREST_LABELS: Record<Interest, string> = {
+  "Cucine e arredamento": "Cucine e arredamento",
+  "Riscaldamento e clima": "Riscaldamento e clima",
+  "Ceramiche e arredobagno": "Ceramiche e arredobagno",
+  "Porte e serramenti": "Porte e serramenti",
+};
+
 const PREFERENCES: Preference[] = [
   "Buono ferramenta",
   "Appuntamento Showroom",
@@ -96,9 +103,10 @@ export default function TvKioskLeadForm() {
   const [error, setError] = useState<string | null>(null);
   const [leadId, setLeadId] = useState<string | null>(null);
 
-  const [interest, setInterest] = useState<Interest | "">("");
+  const [interests, setInterests] = useState<Interest[]>([]);
   const [preference, setPreference] = useState<Preference>("Appuntamento Showroom");
   const [timeSlot, setTimeSlot] = useState("");
+  const [focusedInterestIndex, setFocusedInterestIndex] = useState(0);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [emailLocal, setEmailLocal] = useState("");
@@ -216,14 +224,13 @@ export default function TvKioskLeadForm() {
         setError("Inserisci un numero valido");
         return;
       }
-      if (!interest) setInterest(INTERESTS[0]);
       setStep(4);
       return;
     }
 
     if (step === 4) {
-      if (!interest) {
-        setError("Seleziona un interesse");
+      if (interests.length === 0) {
+        setError("Seleziona almeno un interesse");
         return;
       }
       setPreference("Appuntamento Showroom");
@@ -253,7 +260,7 @@ export default function TvKioskLeadForm() {
               return local && domain ? `${local}@${domain}` : "";
             })(),
             phoneNumber: ensurePhoneInternational(phoneNumber),
-            interest,
+            interests,
             preference,
             timeSlot,
           }),
@@ -270,7 +277,7 @@ export default function TvKioskLeadForm() {
         setLoading(false);
       }
     }
-  }, [ensureLeadCreated, interest, loading, preference, step, timeSlot]);
+  }, [ensureLeadCreated, interests, loading, preference, step, timeSlot]);
 
   const reset = () => {
     setMode("form");
@@ -278,7 +285,7 @@ export default function TvKioskLeadForm() {
     setLoading(false);
     setError(null);
     setLeadId(null);
-    setInterest("");
+    setInterests([]);
     setPreference("Appuntamento Showroom");
     setTimeSlot("");
       setFirstName("");
@@ -319,19 +326,36 @@ export default function TvKioskLeadForm() {
         e.preventDefault();
         const delta = e.key === "ArrowUp" ? -1 : 1;
         if (step === 4) {
-          const currentIndex = Math.max(0, INTERESTS.findIndex((x) => x === interest));
-          const nextIndex = (currentIndex + delta + INTERESTS.length) % INTERESTS.length;
-          setInterest(INTERESTS[nextIndex]);
+          setFocusedInterestIndex((i: number) => {
+            const nextIndex = (i + delta + INTERESTS.length) % INTERESTS.length;
+            return nextIndex;
+          });
         } else {
           const currentIndex = Math.max(0, TIME_SLOTS.findIndex((x) => x === timeSlot));
           const nextIndex = (currentIndex + delta + TIME_SLOTS.length) % TIME_SLOTS.length;
           setTimeSlot(TIME_SLOTS[nextIndex]);
         }
       }
+
+      if (step === 4 && (e.key === "Enter" || e.key === " " || e.key === "Spacebar")) {
+        e.preventDefault();
+        const opt = INTERESTS[focusedInterestIndex] as Interest | undefined;
+        if (!opt) return;
+        setInterests((prev) => {
+          const has = prev.includes(opt);
+          if (has) return prev.filter((x) => x !== opt);
+          return [...prev, opt];
+        });
+      }
+
+      if (step === 4 && e.key === "ArrowRight") {
+        e.preventDefault();
+        next();
+      }
     };
     window.addEventListener("keydown", handler, true);
     return () => window.removeEventListener("keydown", handler, true);
-  }, [goBack, interest, mode, next, step, timeSlot]);
+  }, [focusedInterestIndex, goBack, mode, next, step, timeSlot]);
 
   if (mode === "done") {
     return (
@@ -462,7 +486,28 @@ export default function TvKioskLeadForm() {
             <>
               <StepTitle>A cosa sei interessato?</StepTitle>
               <div className="mt-8">
-                <ChoiceList options={INTERESTS} value={interest} onChange={setInterest} />
+                <div className="grid grid-cols-1 gap-4">
+                  {INTERESTS.map((opt, idx) => {
+                    const selected = interests.includes(opt);
+                    const focused = idx === focusedInterestIndex;
+                    return (
+                      <div
+                        key={opt}
+                        className={[
+                          "rounded-2xl border px-6 py-5 text-left text-xl font-semibold transition-colors md:text-2xl",
+                          selected ? "border-white bg-white text-[#003C5C]" : "border-white/10 bg-white/5 text-white",
+                          focused ? "ring-2 ring-white" : "",
+                        ].join(" ")}
+                      >
+                        {selected ? "✓ " : ""}
+                        {INTEREST_LABELS[opt]}
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="mt-6 text-lg font-semibold text-white/80 md:text-xl">
+                  ↑ ↓ scegli · INVIO seleziona · → prosegui
+                </div>
               </div>
             </>
           ) : null}

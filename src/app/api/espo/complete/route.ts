@@ -8,12 +8,25 @@ type CompleteBody = {
   emailAddress?: unknown;
   phoneNumber?: unknown;
   interest?: unknown;
+  interests?: unknown;
   preference?: unknown;
   timeSlot?: unknown;
 };
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
+}
+
+function toInterests(body: CompleteBody) {
+  if (Array.isArray(body.interests)) {
+    const list = body.interests
+      .filter((x) => isNonEmptyString(x))
+      .map((x) => x.trim())
+      .filter((x) => x.length > 0);
+    if (list.length > 0) return list;
+  }
+  if (isNonEmptyString(body.interest)) return [body.interest.trim()];
+  return [];
 }
 
 export async function POST(req: Request) {
@@ -29,9 +42,13 @@ export async function POST(req: Request) {
     !isNonEmptyString(body.lastName) ||
     !isNonEmptyString(body.emailAddress) ||
     !isNonEmptyString(body.phoneNumber) ||
-    !isNonEmptyString(body.interest) ||
     !isNonEmptyString(body.preference)
   ) {
+    return NextResponse.json({ error: "Dati non validi" }, { status: 400 });
+  }
+
+  const interests = toInterests(body);
+  if (interests.length === 0) {
     return NextResponse.json({ error: "Dati non validi" }, { status: 400 });
   }
 
@@ -50,7 +67,7 @@ export async function POST(req: Request) {
 
     const description = [
       "Registrazione showroom",
-      `Interesse: ${body.interest.trim()}`,
+      `Interesse: ${interests.join(", ")}`,
       `Preferenza: ${body.preference.trim()}`,
       needsTimeSlot && slot ? `Disponibilità: ${slot}` : "",
     ].join("\n");
@@ -66,7 +83,7 @@ export async function POST(req: Request) {
       description,
     });
 
-    const opportunityName = `${body.firstName.trim()} ${body.lastName.trim()} - ${body.interest.trim()}`;
+    const opportunityName = `${body.firstName.trim()} ${body.lastName.trim()} - ${interests.join(", ")}`;
 
     const teamIdByInterest: Record<string, string> = {
       "Cucine e arredamento": "66d72805bb5947922",
@@ -75,7 +92,9 @@ export async function POST(req: Request) {
       "Porte e serramenti": "664f5d21a24f43a0e",
     };
 
-    const teamId = teamIdByInterest[body.interest.trim()];
+    const teamsIds = Array.from(
+      new Set(interests.map((i) => teamIdByInterest[i]).filter((id) => typeof id === "string")),
+    );
 
     const today = new Date().toISOString().slice(0, 10);
     const opportunity = await espoRequest<{ id: string }>("POST", "Opportunity", {
@@ -85,7 +104,7 @@ export async function POST(req: Request) {
       closeDate: today,
       cParentId: leadId,
       cParentType: "Lead",
-      teamsIds: teamId ? [teamId] : [],
+      teamsIds,
       description,
     });
 
