@@ -68,7 +68,21 @@ function SelectField<T extends string>({
   );
 }
 
-export default function MobileLeadForm() {
+export type MobileLeadFormProps = {
+  forcedPreference?: Preference;
+  headerTitle?: string;
+  headerSubtitle?: string;
+  submitLabel?: string;
+  hidePreferenceField?: boolean;
+};
+
+export default function MobileLeadForm({
+  forcedPreference,
+  headerTitle = "Compila i campi",
+  headerSubtitle,
+  submitLabel = "Invia",
+  hidePreferenceField = Boolean(forcedPreference),
+}: MobileLeadFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -77,11 +91,12 @@ export default function MobileLeadForm() {
   const [emailAddress, setEmailAddress] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [interest, setInterest] = useState<Interest | "">("");
-  const [preference, setPreference] = useState<Preference | "">("");
+  const [preference, setPreference] = useState<Preference | "">(forcedPreference ?? "");
   const [timeSlot, setTimeSlot] = useState("");
 
+  const effectivePreference = forcedPreference ?? preference;
   const requiresTimeSlot =
-    preference === "Appuntamento Showroom" || preference === "Consulenza interior designer";
+    effectivePreference === "Appuntamento Showroom" || effectivePreference === "Consulenza interior designer";
 
   const canSubmit = useMemo(() => {
     return (
@@ -90,11 +105,21 @@ export default function MobileLeadForm() {
       isValidEmail(emailAddress) &&
       normalizePhoneDigits(phoneNumber).length >= 6 &&
       interest !== "" &&
-      preference !== "" &&
+      effectivePreference !== "" &&
       (!requiresTimeSlot || timeSlot.trim().length > 0) &&
       !loading
     );
-  }, [emailAddress, firstName, interest, lastName, loading, phoneNumber, preference, requiresTimeSlot, timeSlot]);
+  }, [
+    emailAddress,
+    effectivePreference,
+    firstName,
+    interest,
+    lastName,
+    loading,
+    phoneNumber,
+    requiresTimeSlot,
+    timeSlot,
+  ]);
 
   const submit = async () => {
     if (!canSubmit) return;
@@ -125,7 +150,7 @@ export default function MobileLeadForm() {
           emailAddress: emailAddress.trim(),
           phoneNumber: ensurePhoneInternational(phoneNumber),
           interest,
-          preference,
+          preference: effectivePreference,
           timeSlot: requiresTimeSlot ? timeSlot : "",
         }),
       });
@@ -151,7 +176,8 @@ export default function MobileLeadForm() {
   return (
     <div className="min-h-[100dvh] overflow-x-hidden p-6 pb-[calc(2.5rem+env(safe-area-inset-bottom))] [touch-action:pan-y]">
       <div className="mx-auto w-full max-w-xl rounded-3xl border border-white/10 bg-white/5 p-8">
-        <div className="mt-2 text-sm font-semibold text-white/60">Compila i campi</div>
+        <div className="mt-2 text-sm font-semibold text-white/60">{headerTitle}</div>
+        {headerSubtitle ? <div className="mt-2 text-lg text-white/80">{headerSubtitle}</div> : null}
 
         <div className="mt-8 space-y-6">
           <div>
@@ -228,12 +254,18 @@ export default function MobileLeadForm() {
           <div>
             <div className="text-2xl font-semibold">Preferenza</div>
             <div className="mt-3">
-              <SelectField
-                placeholder="Seleziona preferenza"
-                options={PREFERENCES}
-                value={preference}
-                onChange={(v) => setPreference(v as Preference | "")}
-              />
+              {hidePreferenceField ? (
+                <div className="w-full rounded-2xl border border-white/10 bg-white/10 px-6 py-5 text-xl font-semibold text-white">
+                  {effectivePreference}
+                </div>
+              ) : (
+                <SelectField
+                  placeholder="Seleziona preferenza"
+                  options={PREFERENCES}
+                  value={preference}
+                  onChange={(v) => setPreference(v as Preference | "")}
+                />
+              )}
             </div>
           </div>
 
@@ -264,7 +296,7 @@ export default function MobileLeadForm() {
             onClick={submit}
             className="w-full rounded-2xl bg-white px-6 py-5 text-xl font-semibold text-[#003C5C] transition-opacity disabled:opacity-50"
           >
-            {loading ? "Invio..." : "Invia"}
+            {loading ? "Invio..." : submitLabel}
           </button>
         </div>
       </div>

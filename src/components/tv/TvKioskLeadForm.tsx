@@ -23,6 +23,13 @@ const PREFERENCES: Preference[] = [
   "Consulenza interior designer",
 ];
 
+const TIME_SLOTS = [
+  "Settimana - mattina",
+  "Settimana - pomeriggio",
+  "Sabato mattina",
+  "Sabato pomeriggio",
+] as const;
+
 function isValidEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 }
@@ -90,7 +97,7 @@ export default function TvKioskLeadForm() {
   const [leadId, setLeadId] = useState<string | null>(null);
 
   const [interest, setInterest] = useState<Interest | "">("");
-  const [preference, setPreference] = useState<Preference | "">("");
+  const [preference, setPreference] = useState<Preference>("Appuntamento Showroom");
   const [timeSlot, setTimeSlot] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -219,18 +226,14 @@ export default function TvKioskLeadForm() {
         setError("Seleziona un interesse");
         return;
       }
-      if (!preference) setPreference(PREFERENCES[0]);
+      setPreference("Appuntamento Showroom");
+      if (!timeSlot) setTimeSlot(TIME_SLOTS[0]);
       setStep(5);
       return;
     }
 
     if (step === 5) {
-      const needsSlot = preference === "Appuntamento Showroom" || preference === "Consulenza interior designer";
-      if (!preference) {
-        setError("Seleziona una preferenza");
-        return;
-      }
-      if (needsSlot && !timeSlot.trim()) {
+      if (!timeSlot.trim()) {
         setError("Seleziona una disponibilità");
         return;
       }
@@ -252,7 +255,7 @@ export default function TvKioskLeadForm() {
             phoneNumber: ensurePhoneInternational(phoneNumber),
             interest,
             preference,
-            timeSlot: needsSlot ? timeSlot : "",
+            timeSlot,
           }),
         });
         const json = (await res.json().catch(() => null)) as any;
@@ -276,8 +279,8 @@ export default function TvKioskLeadForm() {
     setError(null);
     setLeadId(null);
     setInterest("");
-    setPreference("");
-      setTimeSlot("");
+    setPreference("Appuntamento Showroom");
+    setTimeSlot("");
       setFirstName("");
       setLastName("");
       setEmailLocal("");
@@ -320,15 +323,15 @@ export default function TvKioskLeadForm() {
           const nextIndex = (currentIndex + delta + INTERESTS.length) % INTERESTS.length;
           setInterest(INTERESTS[nextIndex]);
         } else {
-          const currentIndex = Math.max(0, PREFERENCES.findIndex((x) => x === preference));
-          const nextIndex = (currentIndex + delta + PREFERENCES.length) % PREFERENCES.length;
-          setPreference(PREFERENCES[nextIndex]);
+          const currentIndex = Math.max(0, TIME_SLOTS.findIndex((x) => x === timeSlot));
+          const nextIndex = (currentIndex + delta + TIME_SLOTS.length) % TIME_SLOTS.length;
+          setTimeSlot(TIME_SLOTS[nextIndex]);
         }
       }
     };
     window.addEventListener("keydown", handler, true);
     return () => window.removeEventListener("keydown", handler, true);
-  }, [goBack, interest, mode, next, preference, step]);
+  }, [goBack, interest, mode, next, step, timeSlot]);
 
   if (mode === "done") {
     return (
@@ -466,34 +469,24 @@ export default function TvKioskLeadForm() {
 
           {step === 5 ? (
             <>
-              <StepTitle>Cosa preferisci?</StepTitle>
-              <div className="mt-8">
-                <ChoiceList options={PREFERENCES} value={preference} onChange={setPreference} />
+              <StepTitle>Quando preferisce?</StepTitle>
+              <div className="mt-8 grid grid-cols-1 gap-4">
+                {TIME_SLOTS.map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => setTimeSlot(opt)}
+                    className={[
+                      "rounded-2xl border px-6 py-5 text-left text-xl font-semibold transition-colors md:text-2xl",
+                      timeSlot === opt
+                        ? "border-white bg-white text-[#003C5C]"
+                        : "border-white/10 bg-white/5 text-white hover:border-white/20",
+                    ].join(" ")}
+                  >
+                    {opt}
+                  </button>
+                ))}
               </div>
-              {(preference === "Appuntamento Showroom" || preference === "Consulenza interior designer") ? (
-                <>
-                  <div className="mt-10 text-2xl font-semibold">Quando preferisce?</div>
-                  <div className="mt-4 grid grid-cols-1 gap-4">
-                    {["Settimana - mattina", "Settimana - pomeriggio", "Sabato mattina", "Sabato pomeriggio"].map(
-                      (opt) => (
-                        <button
-                          key={opt}
-                          type="button"
-                          onClick={() => setTimeSlot(opt)}
-                          className={[
-                            "rounded-2xl border px-6 py-5 text-left text-xl font-semibold transition-colors md:text-2xl",
-                            timeSlot === opt
-                              ? "border-white bg-white text-[#003C5C]"
-                              : "border-white/10 bg-white/5 text-white hover:border-white/20",
-                          ].join(" ")}
-                        >
-                          {opt}
-                        </button>
-                      ),
-                    )}
-                  </div>
-                </>
-              ) : null}
             </>
           ) : null}
 
