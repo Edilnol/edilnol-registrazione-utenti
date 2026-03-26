@@ -56,7 +56,7 @@ function focusInput(el: HTMLInputElement | null) {
 }
 
 function StepTitle({ children }: { children: React.ReactNode }) {
-  return <h1 className="text-balance text-2xl font-semibold leading-tight md:text-5xl">{children}</h1>;
+  return <h1 className="text-balance text-xl font-semibold leading-tight md:text-5xl">{children}</h1>;
 }
 
 function ChoiceList<T extends string>({
@@ -96,7 +96,7 @@ export type TvKioskLeadFormProps = {
 
 export default function TvKioskLeadForm({
   forcedPreference,
-  headerTitle = "Prenota un appuntamento",
+  headerTitle = "In omaggio una consulenza con Interior Designer dal Valore di €250,00",
 }: TvKioskLeadFormProps = {}) {
   const [mode, setMode] = useState<"form" | "done">("form");
   const [step, setStep] = useState(0);
@@ -334,6 +334,7 @@ export default function TvKioskLeadForm({
         e.preventDefault();
         next();
       }
+      
     };
     window.addEventListener("keydown", handler, true);
     return () => window.removeEventListener("keydown", handler, true);
@@ -363,10 +364,11 @@ export default function TvKioskLeadForm({
 
   return (
     <div className="flex h-full items-center justify-center p-6">
-      <div className="relative w-full max-w-xl rounded-3xl border border-white/10 bg-white/5 p-8 md:p-12">
+      <div className="w-full max-w-xl">
         <h1 className="mb-8 text-left text-6xl font-bold text-white md:text-5xl lg:text-5xl leading-tight">
           {headerTitle}
         </h1>
+        <div className="relative rounded-3xl border border-white/10 bg-white/5 p-8 md:p-12">
         <div className="flex items-center justify-between gap-4">
           <div className="text-sm font-semibold text-white/60 md:text-lg">
             Step {step + 1} di {stepsTotal}
@@ -510,6 +512,7 @@ export default function TvKioskLeadForm({
             </button>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );
