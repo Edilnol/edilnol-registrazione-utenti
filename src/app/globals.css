@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: #003C5C;
+  color: #ffffff;
+}
+
+input, textarea {
+  caret-color: #ffffff;
+}
+
+html, body {
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+* {
+  overscroll-behavior-x: none;
+}
+
+/* Vertical orientation (rotate screen -90deg for portrait monitors) */
+.orientation-vertical {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 100vh;
+  height: 100vw;
+  transform: translate(-50%, -50%) rotate(90deg);
+  transform-origin: center center;
+  overflow: hidden;
+}

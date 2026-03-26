@@ -1,0 +1,32 @@
+{
+  "name": "edilnol-registrazione-utenti",
+  "version": "1.0.0",
+  "private": true,
+  "description": "",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "next": "^16.2.1",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "autoprefixer": "^10.4.27",
+    "eslint": "^9.39.4",
+    "eslint-config-next": "^16.2.1",
+    "postcss": "^8.5.8",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.9.3"
+  }
+}
