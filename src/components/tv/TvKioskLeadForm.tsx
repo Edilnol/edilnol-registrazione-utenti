@@ -56,7 +56,7 @@ function focusInput(el: HTMLInputElement | null) {
 }
 
 function StepTitle({ children }: { children: React.ReactNode }) {
-  return <h1 className="text-balance text-3xl font-semibold leading-tight md:text-5xl">{children}</h1>;
+  return <h1 className="text-balance text-2xl font-semibold leading-tight md:text-5xl">{children}</h1>;
 }
 
 function ChoiceList<T extends string>({
@@ -364,7 +364,7 @@ export default function TvKioskLeadForm({
   return (
     <div className="flex h-full items-center justify-center p-6">
       <div className="relative w-full max-w-xl rounded-3xl border border-white/10 bg-white/5 p-8 md:p-12">
-        <h1 className="mb-8 text-center text-6xl font-bold text-white md:text-5xl lg:text-5xl leading-tight">
+        <h1 className="mb-8 text-left text-6xl font-bold text-white md:text-5xl lg:text-5xl leading-tight">
           {headerTitle}
         </h1>
         <div className="flex items-center justify-between gap-4">
