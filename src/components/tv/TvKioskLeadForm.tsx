@@ -92,6 +92,11 @@ export default function TvKioskLeadForm() {
   const [interest, setInterest] = useState<Interest | "">("");
   const [preference, setPreference] = useState<Preference | "">("");
   const [timeSlot, setTimeSlot] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [emailLocal, setEmailLocal] = useState("");
+  const [emailDomain, setEmailDomain] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
 
   const firstNameRef = useRef<HTMLInputElement | null>(null);
   const lastNameRef = useRef<HTMLInputElement | null>(null);
@@ -102,15 +107,17 @@ export default function TvKioskLeadForm() {
   const stepsTotal = 6;
   const progress = useMemo(() => Math.round(((step + 1) / stepsTotal) * 100), [step]);
 
-  const getFirstName = () => firstNameRef.current?.value.trim() ?? "";
-  const getLastName = () => lastNameRef.current?.value.trim() ?? "";
-  const getEmail = () => {
-    const local = (emailLocalRef.current?.value ?? "").trim();
-    const domain = (emailDomainRef.current?.value ?? "").trim();
+  const readFirstName = () => firstNameRef.current?.value.trim() ?? firstName.trim();
+  const readLastName = () => lastNameRef.current?.value.trim() ?? lastName.trim();
+  const readEmailLocal = () => (emailLocalRef.current?.value ?? emailLocal).trim();
+  const readEmailDomain = () => (emailDomainRef.current?.value ?? emailDomain).trim();
+  const readEmail = () => {
+    const local = readEmailLocal();
+    const domain = readEmailDomain();
     if (!local || !domain) return "";
     return `${local}@${domain}`;
   };
-  const getPhone = () => phoneRef.current?.value ?? "";
+  const readPhone = () => phoneRef.current?.value ?? phoneNumber;
 
   const goBack = useCallback(() => {
     if (loading) return;
@@ -118,12 +125,16 @@ export default function TvKioskLeadForm() {
     setStep((s) => Math.max(0, s - 1));
   }, [loading]);
 
-  const ensureLeadCreated = useCallback(async () => {
+  const ensureLeadCreated = useCallback(async (values?: { firstName: string; lastName: string; emailAddress: string }) => {
     if (leadId) return leadId;
     const payload = {
-      firstName: getFirstName(),
-      lastName: getLastName(),
-      emailAddress: getEmail(),
+      firstName: values?.firstName ?? firstName.trim(),
+      lastName: values?.lastName ?? lastName.trim(),
+      emailAddress: values?.emailAddress ?? (() => {
+        const local = emailLocal.trim();
+        const domain = emailDomain.trim();
+        return local && domain ? `${local}@${domain}` : "";
+      })(),
     };
     const res = await fetch("/api/espo/lead", {
       method: "POST",
@@ -136,39 +147,51 @@ export default function TvKioskLeadForm() {
     }
     setLeadId(String(json.leadId));
     return String(json.leadId);
-  }, [leadId]);
+  }, [emailDomain, emailLocal, firstName, lastName, leadId]);
 
   const next = useCallback(async () => {
     if (loading) return;
     setError(null);
 
     if (step === 0) {
-      if (getFirstName().length < 2) {
+      const v = readFirstName();
+      if (v.length < 2) {
         setError("Inserisci il nome");
         return;
       }
+      setFirstName(v);
       setStep(1);
       return;
     }
 
     if (step === 1) {
-      if (getLastName().length < 2) {
+      const v = readLastName();
+      if (v.length < 2) {
         setError("Inserisci il cognome");
         return;
       }
+      setLastName(v);
       setStep(2);
       return;
     }
 
     if (step === 2) {
-      const email = getEmail();
+      const local = readEmailLocal();
+      const domain = readEmailDomain();
+      setEmailLocal(local);
+      setEmailDomain(domain);
+      const email = local && domain ? `${local}@${domain}` : "";
       if (!isValidEmail(email)) {
         setError("Inserisci un'email valida");
         return;
       }
       setLoading(true);
       try {
-        await ensureLeadCreated();
+        await ensureLeadCreated({
+          firstName: readFirstName(),
+          lastName: readLastName(),
+          emailAddress: email,
+        });
         setStep(3);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Creazione lead fallita");
@@ -179,7 +202,9 @@ export default function TvKioskLeadForm() {
     }
 
     if (step === 3) {
-      const phone = normalizePhoneDigits(getPhone());
+      const phoneRaw = readPhone();
+      setPhoneNumber(phoneRaw);
+      const phone = normalizePhoneDigits(phoneRaw);
       if (phone.length < 6) {
         setError("Inserisci un numero valido");
         return;
@@ -217,10 +242,14 @@ export default function TvKioskLeadForm() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             leadId: ensuredLeadId,
-            firstName: getFirstName(),
-            lastName: getLastName(),
-            emailAddress: getEmail(),
-            phoneNumber: ensurePhoneInternational(getPhone()),
+            firstName: firstName.trim(),
+            lastName: lastName.trim(),
+            emailAddress: (() => {
+              const local = emailLocal.trim();
+              const domain = emailDomain.trim();
+              return local && domain ? `${local}@${domain}` : "";
+            })(),
+            phoneNumber: ensurePhoneInternational(phoneNumber),
             interest,
             preference,
             timeSlot: needsSlot ? timeSlot : "",
@@ -248,6 +277,12 @@ export default function TvKioskLeadForm() {
     setLeadId(null);
     setInterest("");
     setPreference("");
+      setTimeSlot("");
+      setFirstName("");
+      setLastName("");
+      setEmailLocal("");
+      setEmailDomain("");
+      setPhoneNumber("");
     if (firstNameRef.current) firstNameRef.current.value = "";
     if (lastNameRef.current) lastNameRef.current.value = "";
     if (emailLocalRef.current) emailLocalRef.current.value = "";
@@ -337,7 +372,7 @@ export default function TvKioskLeadForm() {
               <div className="mt-8">
                 <input
                   ref={firstNameRef}
-                  defaultValue=""
+                  defaultValue={firstName}
                   placeholder="Nome"
                   autoComplete="given-name"
                   className="w-full rounded-2xl border border-white/10 bg-white/5 px-6 py-5 text-xl text-white placeholder:text-white/40 focus:border-white/20 focus:outline-none md:text-2xl"
@@ -352,7 +387,7 @@ export default function TvKioskLeadForm() {
               <div className="mt-8">
                 <input
                   ref={lastNameRef}
-                  defaultValue=""
+                  defaultValue={lastName}
                   placeholder="Cognome"
                   autoComplete="family-name"
                   className="w-full rounded-2xl border border-white/10 bg-white/5 px-6 py-5 text-xl text-white placeholder:text-white/40 focus:border-white/20 focus:outline-none md:text-2xl"
@@ -368,7 +403,7 @@ export default function TvKioskLeadForm() {
                 <div className="flex items-center gap-3">
                   <input
                     ref={emailLocalRef}
-                    defaultValue=""
+                    defaultValue={emailLocal}
                     placeholder="nome"
                     autoComplete="off"
                     className="w-full rounded-2xl border border-white/10 bg-white/5 px-6 py-5 text-xl text-white placeholder:text-white/40 focus:border-white/20 focus:outline-none md:text-2xl"
@@ -384,7 +419,7 @@ export default function TvKioskLeadForm() {
                   </div>
                   <input
                     ref={emailDomainRef}
-                    defaultValue=""
+                    defaultValue={emailDomain}
                     placeholder="dominio.it"
                     autoComplete="off"
                     className="w-full rounded-2xl border border-white/10 bg-white/5 px-6 py-5 text-xl text-white placeholder:text-white/40 focus:border-white/20 focus:outline-none md:text-2xl"
@@ -410,7 +445,7 @@ export default function TvKioskLeadForm() {
                 </div>
                 <input
                   ref={phoneRef}
-                  defaultValue=""
+                  defaultValue={phoneNumber}
                   placeholder="Numero di cellulare"
                   autoComplete="tel"
                   inputMode="tel"
