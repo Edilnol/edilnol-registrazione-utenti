@@ -23,8 +23,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Suspense>
           <OrientationWrapper>
             <div className="min-h-full flex flex-col">
-              <header className="px-6 py-4 md:px-10 md:py-6 flex justify-center">
-                <EdilnolLogo className="text-white h-10 md:h-24" />
+              <header className="px-6 py-4 md:px-10 md:py-6">
+                <div className="mx-auto w-full max-w-xl">
+                  <EdilnolLogo className="text-white h-10 md:h-16" />
+                </div>
               </header>
               <main className="flex-1">{children}</main>
             </div>
