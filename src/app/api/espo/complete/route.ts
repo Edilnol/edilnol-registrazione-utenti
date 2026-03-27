@@ -11,6 +11,7 @@ type CompleteBody = {
   interests?: unknown;
   preference?: unknown;
   timeSlot?: unknown;
+  message?: unknown;
 };
 
 function isNonEmptyString(value: unknown): value is string {
@@ -64,12 +65,14 @@ export async function POST(req: Request) {
     const needsTimeSlot =
       ["Appuntamento Showroom", "Consulenza interior designer"].includes(body.preference.trim());
     const slot = isNonEmptyString(body.timeSlot) ? body.timeSlot.trim() : "";
+    const message = isNonEmptyString(body.message) ? body.message.trim() : "";
 
     const description = [
       "Registrazione showroom",
       `Interesse: ${interests.join(", ")}`,
       `Preferenza: ${body.preference.trim()}`,
       needsTimeSlot && slot ? `Disponibilità: ${slot}` : "",
+      message ? `Messaggio: ${message}` : "",
     ].join("\n");
 
     const phone = body.phoneNumber.trim();

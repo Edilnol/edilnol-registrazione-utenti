@@ -112,12 +112,14 @@ export default function TvKioskLeadForm({
   const [emailLocal, setEmailLocal] = useState("");
   const [emailDomain, setEmailDomain] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [message, setMessage] = useState("");
 
   const firstNameRef = useRef<HTMLInputElement | null>(null);
   const lastNameRef = useRef<HTMLInputElement | null>(null);
   const emailLocalRef = useRef<HTMLInputElement | null>(null);
   const emailDomainRef = useRef<HTMLInputElement | null>(null);
   const phoneRef = useRef<HTMLInputElement | null>(null);
+  const messageRef = useRef<HTMLInputElement | null>(null);
 
   const stepsTotal = 5;
   const progress = useMemo(() => Math.round(((step + 1) / stepsTotal) * 100), [step]);
@@ -133,6 +135,7 @@ export default function TvKioskLeadForm({
     return `${local}@${domain}`;
   };
   const readPhone = () => phoneRef.current?.value ?? phoneNumber;
+  const readMessage = () => messageRef.current?.value ?? message;
 
   const goBack = useCallback(() => {
     if (loading) return;
@@ -233,6 +236,8 @@ export default function TvKioskLeadForm({
         setError("Seleziona almeno un interesse");
         return;
       }
+      const msg = readMessage();
+      setMessage(msg);
       setLoading(true);
       try {
         const ensuredLeadId = await ensureLeadCreated();
@@ -251,6 +256,7 @@ export default function TvKioskLeadForm({
             phoneNumber: ensurePhoneInternational(phoneNumber),
             interests,
             preference: forcedPreference ?? "Appuntamento Showroom",
+            message: msg.trim(),
           }),
         });
         const json = (await res.json().catch(() => null)) as any;
@@ -266,7 +272,7 @@ export default function TvKioskLeadForm({
       }
       return;
     }
-  }, [ensureLeadCreated, interests, loading, forcedPreference, step, emailLocal, emailDomain, firstName, lastName, phoneNumber]);
+  }, [ensureLeadCreated, interests, loading, forcedPreference, step, emailLocal, emailDomain, firstName, lastName, phoneNumber, message]);
 
   const reset = () => {
     setMode("form");
@@ -281,11 +287,13 @@ export default function TvKioskLeadForm({
       setEmailLocal("");
       setEmailDomain("");
       setPhoneNumber("");
+      setMessage("");
     if (firstNameRef.current) firstNameRef.current.value = "";
     if (lastNameRef.current) lastNameRef.current.value = "";
     if (emailLocalRef.current) emailLocalRef.current.value = "";
     if (emailDomainRef.current) emailDomainRef.current.value = "";
     if (phoneRef.current) phoneRef.current.value = "";
+    if (messageRef.current) messageRef.current.value = "";
   };
 
   useLayoutEffect(() => {
@@ -494,6 +502,17 @@ export default function TvKioskLeadForm({
                 </div>
                 <div className="mt-6 text-lg font-semibold text-white/80 md:text-xl">
                   ↑ ↓ scegli · INVIO seleziona · → prosegui
+                </div>
+                <div className="mt-8">
+                  <div className="text-xl font-semibold text-white/80 md:text-2xl">Messaggio (opzionale)</div>
+                  <div className="mt-3">
+                    <input
+                      ref={messageRef}
+                      defaultValue={message}
+                      placeholder="Scrivi qui..."
+                      className="w-full rounded-2xl border border-white/10 bg-white/5 px-6 py-5 text-xl text-white placeholder:text-white/40 focus:border-white/20 focus:outline-none md:text-2xl"
+                    />
+                  </div>
                 </div>
               </div>
             </>

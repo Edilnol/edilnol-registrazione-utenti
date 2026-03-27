@@ -92,6 +92,7 @@ export default function MobileLeadForm({
   const [phoneNumber, setPhoneNumber] = useState("");
   const [interests, setInterests] = useState<Interest[]>([]);
   const [preference, setPreference] = useState<Preference | "">(forcedPreference ?? "");
+  const [message, setMessage] = useState("");
 
   const effectivePreference = forcedPreference ?? preference;
 
@@ -145,6 +146,7 @@ export default function MobileLeadForm({
           phoneNumber: ensurePhoneInternational(phoneNumber),
           interests,
           preference: effectivePreference,
+          message: message.trim(),
         }),
       });
       const completeJson = (await completeRes.json().catch(() => null)) as any;
@@ -158,6 +160,7 @@ export default function MobileLeadForm({
       setPhoneNumber("");
       setInterests([]);
       setPreference("");
+      setMessage("");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Invio fallito");
     } finally {
@@ -278,6 +281,19 @@ export default function MobileLeadForm({
                   onChange={(v) => setPreference(v as Preference | "")}
                 />
               )}
+            </div>
+          </div>
+
+          <div>
+            <div className="text-2xl font-semibold">Messaggio</div>
+            <div className="mt-3">
+              <textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Scrivi qui..."
+                rows={4}
+                className="w-full resize-none rounded-2xl border border-white/10 bg-white/5 px-6 py-5 text-xl text-white placeholder:text-white/40 focus:border-white/20 focus:outline-none"
+              />
             </div>
           </div>
 
