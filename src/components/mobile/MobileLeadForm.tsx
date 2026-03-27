@@ -90,7 +90,7 @@ export default function MobileLeadForm({
   const [lastName, setLastName] = useState("");
   const [emailAddress, setEmailAddress] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [interest, setInterest] = useState<Interest | "">("");
+  const [interests, setInterests] = useState<Interest[]>([]);
   const [preference, setPreference] = useState<Preference | "">(forcedPreference ?? "");
 
   const effectivePreference = forcedPreference ?? preference;
@@ -101,7 +101,7 @@ export default function MobileLeadForm({
       lastName.trim().length >= 2 &&
       isValidEmail(emailAddress) &&
       normalizePhoneDigits(phoneNumber).length >= 6 &&
-      interest !== "" &&
+      interests.length > 0 &&
       effectivePreference !== "" &&
       !loading
     );
@@ -109,7 +109,7 @@ export default function MobileLeadForm({
     emailAddress,
     effectivePreference,
     firstName,
-    interest,
+    interests,
     lastName,
     loading,
     phoneNumber,
@@ -143,7 +143,7 @@ export default function MobileLeadForm({
           lastName: lastName.trim(),
           emailAddress: emailAddress.trim(),
           phoneNumber: ensurePhoneInternational(phoneNumber),
-          interest,
+          interests,
           preference: effectivePreference,
         }),
       });
@@ -156,7 +156,7 @@ export default function MobileLeadForm({
       setLastName("");
       setEmailAddress("");
       setPhoneNumber("");
-      setInterest("");
+      setInterests([]);
       setPreference("");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Invio fallito");
@@ -232,14 +232,34 @@ export default function MobileLeadForm({
           </div>
 
           <div>
-            <div className="text-2xl font-semibold">Interesse</div>
+            <div className="text-2xl font-semibold">Interessi</div>
             <div className="mt-3">
-              <SelectField
-                placeholder="Seleziona interesse"
-                options={INTERESTS}
-                value={interest}
-                onChange={(v) => setInterest(v as Interest | "")}
-              />
+              <div className="grid grid-cols-1 gap-3">
+                {INTERESTS.map((opt) => {
+                  const selected = interests.includes(opt);
+                  return (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => {
+                        setInterests((prev) => {
+                          if (prev.includes(opt)) return prev.filter((x) => x !== opt);
+                          return [...prev, opt];
+                        });
+                      }}
+                      className={[
+                        "w-full rounded-2xl border px-6 py-5 text-left text-xl font-semibold transition-colors",
+                        selected
+                          ? "border-white bg-white text-[#003C5C]"
+                          : "border-white/10 bg-white/5 text-white hover:border-white/20",
+                      ].join(" ")}
+                    >
+                      {selected ? "✓ " : ""}
+                      {opt}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
